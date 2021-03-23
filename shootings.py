@@ -2,6 +2,7 @@ import os
 import torch
 import pandas as pd
 import numpy as np
+import seaborn as sns
 import matplotlib.pyplot as plt
 from matplotlib.pyplot import pie, axis, show
 
@@ -46,14 +47,20 @@ class Shootings:
         plt.show()
 
     def race_distribution(self):
-        config = {"kind": "bar", "ylabel": "Number of Shootings From Race",
-                  "xlabel": "race"}
+        config = {"kind": "bar", "ylabel": "Number of Deaths",
+                  "xlabel": "Race"}
         self.df["race"].value_counts().plot(**config)
         plt.show()
 
+    def death_distribution(self):
+        graph = sns.countplot(x="Race", data=self.df, hue="manner_of_death")
+        graph.set_xlabel("Race")
+        graph.set_ylabel("")
+
 
 def main():
-    shootings_df = Shootings("shootings.csv")
+    url = "https://raw.githubusercontent.com/washingtonpost/data-police-shootings/master/fatal-police-shootings-data.csv"
+    shootings_df = Shootings(url)
     # print(shootings_df.df.head())
     shootings_df.race_distribution()
 
