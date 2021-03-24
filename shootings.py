@@ -80,7 +80,7 @@ class Shootings:
         print(self.df.head())
 
     def time_series(self):
-        # plt.style.use('bmh')
+        plt.style.use('bmh')
         self.df["month_year"] = self.df.month_year.astype(str)
         line_chart = self.df.groupby(["month_year"]).agg("count")["id"].to_frame(name="count").reset_index()
 
