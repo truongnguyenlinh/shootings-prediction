@@ -57,12 +57,23 @@ class Shootings:
         graph.set_xlabel("Race")
         graph.set_ylabel("")
 
+    def data_treatment(self):
+        # Convert dtype string to datetime
+        self.df["date"] = pd.to_datetime(self.df["date"], format="%Y-%m-%d")
+        self.df = self.df.set_index("date")
+
+        self.df['year'] = self.df.index.year
+        self.df['month'] = self.df.index.month
+        self.df['day'] = self.df.index.day
+        print(self.df.head())
+
 
 def main():
     url = "https://raw.githubusercontent.com/washingtonpost/data-police-shootings/master/fatal-police-shootings-data.csv"
     shootings_df = Shootings(url)
     # print(shootings_df.df.head())
-    shootings_df.race_distribution()
+    # shootings_df.race_distribution()
+    shootings_df.data_treatment()
 
 
 if __name__ == "__main__":
