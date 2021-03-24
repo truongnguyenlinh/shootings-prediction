@@ -5,6 +5,11 @@ import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 from matplotlib.pyplot import pie, axis, show
+import geopandas as gpd
+import geoplot as gplt
+import geoplot.crs as gcrs
+import mapclassify as mc
+# install geoplot via 'conda install geoplot -c conda-forge'
 
 from statsmodels.tsa.seasonal import seasonal_decompose
 
@@ -17,7 +22,7 @@ class Shootings:
 
     def __init__(self, csv, root_dir=""):
         """
-        Initialize a VideoGame dataset.
+        Initialize a Shooting dataset.
         :param csv: a string
         :param root_dir: a string
         """
@@ -57,13 +62,37 @@ class Shootings:
         graph.set_xlabel("Race")
         graph.set_ylabel("")
 
+    def usa_heatmap(self):
+        states_df = self.df.state
+        test = pd.DataFrame(states_df.value_counts(normalize=True).mul(100).round(1).astype(float))
+        test = test.reset_index()
+        test.columns = ["state", "percentage"]
+        usa = gpd.read_file("map/states.shx")
+        usa['percent'] = usa['STATE_ABBR'].map(lambda state: test.query("state == @state").iloc[0]['percentage'])
+        scheme = mc.Quantiles(usa['percent'], k=5)
+
+        ax = gplt.cartogram(
+            usa,
+            scale='percent', limits=(0.95, 1),
+            projection=gcrs.AlbersEqualArea(central_longitude=-100, central_latitude=50),
+            hue='percent', cmap='Blues', scheme=scheme,
+            linewidth=0.9,
+            legend=True, legend_kwargs={'loc': 0}, legend_var='hue',
+            figsize=(8, 12)
+        )
+        gplt.polyplot(usa, facecolor='lightgray', edgecolor='None', ax=ax)
+
+        plt.title("Shooting by state in percentage")
+        plt.show()
 
 def main():
     url = "https://raw.githubusercontent.com/washingtonpost/data-police-shootings/master/fatal-police-shootings-data.csv"
     shootings_df = Shootings(url)
     # print(shootings_df.df.head())
-    shootings_df.race_distribution()
-
+    # shootings_df.race_distribution()
+    shootings_df.usa_heatmap()
 
 if __name__ == "__main__":
     main()
+
+
