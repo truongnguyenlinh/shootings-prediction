@@ -12,7 +12,7 @@ class Shootings:
 
     def __init__(self, csv, root_dir=""):
         """
-        Initialize a VideoGame dataset.
+        Initialize a Shootings dataset.
         :param csv: a string
         :param root_dir: a string
         """
@@ -28,7 +28,10 @@ class Shootings:
     def __str__(self):
         print(self.df)
 
-    def gender_distribution(self):
+    def column_distribution(self):
+        """
+        Plot pie charts which display death based on column type.
+        """
         plt.style.use("ggplot")
         fig, axes = plt.subplots(2, 3, figsize=(18, 8))
         config = {"kind": "pie", "autopct": "%1.1f%%", "startangle": 120}
@@ -42,18 +45,27 @@ class Shootings:
         plt.show()
 
     def race_distribution(self):
+        """
+        Plot histogram which displays deaths based on race.
+        """
         config = {"kind": "bar", "ylabel": "Number of Deaths",
                   "xlabel": "Race"}
         self.df["race"].value_counts().plot(**config)
         plt.show()
 
     def death_distribution(self):
+        """
+        Plot histogram which displays deaths based on race and manner of death.
+        """
         graph = sns.countplot(x="race", data=self.df, hue="manner_of_death")
         graph.set_xlabel("Race")
         graph.set_ylabel("Number of Deaths")
         graph.set_title("Number of Deaths Based on Race")
 
     def data_treatment(self):
+        """
+        Treat dataset by binning and converting date data type.
+        """
         # Bin age groups into 4 groups
         bins = [0, 18, 45, 60, 100]
         groups = ["Teenager", "Adult", "Old", "Very Old"]
@@ -84,6 +96,7 @@ class Shootings:
 def main():
     url = "https://raw.githubusercontent.com/washingtonpost/data-police-shootings/master/fatal-police-shootings-data.csv"
     shootings_df = Shootings(url)
+    shootings_df.column_distribution()
     shootings_df.death_distribution()
     shootings_df.data_treatment()
     shootings_df.time_series()
