@@ -1,12 +1,7 @@
-import os
-import torch
 import pandas as pd
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
-from matplotlib.pyplot import pie, axis, show
-
-from statsmodels.tsa.seasonal import seasonal_decompose
 
 
 class Shootings:
@@ -53,27 +48,45 @@ class Shootings:
         plt.show()
 
     def death_distribution(self):
-        graph = sns.countplot(x="Race", data=self.df, hue="manner_of_death")
+        graph = sns.countplot(x="race", data=self.df, hue="manner_of_death")
         graph.set_xlabel("Race")
-        graph.set_ylabel("")
+        graph.set_ylabel("Number of Deaths")
+        graph.set_title("Number of Deaths Based on Race")
 
     def data_treatment(self):
-        # Convert dtype string to datetime
-        self.df["date"] = pd.to_datetime(self.df["date"], format="%Y-%m-%d")
-        self.df = self.df.set_index("date")
+        # Bin age groups into 4 groups
+        bins = [0, 18, 45, 60, 100]
+        groups = ["Teenager", "Adult", "Old", "Very Old"]
+        self.df["Age_Group"] = pd.cut(self.df["age"], bins, labels=groups)
 
-        self.df['year'] = self.df.index.year
-        self.df['month'] = self.df.index.month
-        self.df['day'] = self.df.index.day
+        # Convert dtype string to datetime
+        self.df["date"] = pd.to_datetime(self.df["date"])
+        self.df["year"] = pd.DatetimeIndex(self.df["date"]).year
+        self.df["month"] = pd.DatetimeIndex(self.df["date"]).month
+        self.df["month_year"] = pd.to_datetime(self.df["date"]).dt.to_period("M")
+
         print(self.df.head())
+
+    def time_series(self):
+        # plt.style.use('bmh')
+        self.df["month_year"] = self.df.month_year.astype(str)
+        line_chart = self.df.groupby(["month_year"]).agg("count")["id"].to_frame(name="count").reset_index()
+
+        plt.figure(figsize=(20, 8))
+        plt.xticks(fontsize=12)
+        plt.yticks(fontsize=15)
+        plt.plot(line_chart["month_year"], line_chart["count"])
+        plt.title("Killings by Month")
+        plt.xticks(ticks=line_chart["month_year"], rotation=90)
+        plt.show()
 
 
 def main():
     url = "https://raw.githubusercontent.com/washingtonpost/data-police-shootings/master/fatal-police-shootings-data.csv"
     shootings_df = Shootings(url)
-    # print(shootings_df.df.head())
-    # shootings_df.race_distribution()
+    shootings_df.death_distribution()
     shootings_df.data_treatment()
+    shootings_df.time_series()
 
 
 if __name__ == "__main__":
