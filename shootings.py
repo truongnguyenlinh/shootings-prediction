@@ -68,7 +68,7 @@ class Shootings:
         """
         # Bin age groups into 4 groups
         bins = [0, 18, 45, 60, 100]
-        groups = ["Teenager", "Adult", "Old", "Very Old"]
+        groups = ["Teenager", "Adult", "Older Adult", "Senior"]
         self.df["Age_Group"] = pd.cut(self.df["age"], bins, labels=groups)
 
         # Convert dtype string to datetime
