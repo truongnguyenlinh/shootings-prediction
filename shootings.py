@@ -58,9 +58,10 @@ class Shootings:
         plt.show()
 
     def death_distribution(self):
-        graph = sns.countplot(x="Race", data=self.df, hue="manner_of_death")
+        graph = sns.countplot(x="race", data=self.df, hue="gender")
         graph.set_xlabel("Race")
-        graph.set_ylabel("")
+        graph.set_ylabel("Number of Deaths")
+        plt.show()
 
     def usa_heatmap(self):
         states_df = self.df.state
@@ -69,15 +70,15 @@ class Shootings:
         test.columns = ["state", "percentage"]
         usa = gpd.read_file("map/states.shx")
         usa['percent'] = usa['STATE_ABBR'].map(lambda state: test.query("state == @state").iloc[0]['percentage'])
-        scheme = mc.Quantiles(usa['percent'], k=5)
-
+        scheme = mc.FisherJenks(usa['percent'], k=7)
+        print(scheme)
         ax = gplt.cartogram(
             usa,
-            scale='percent', limits=(0.95, 1),
-            projection=gcrs.AlbersEqualArea(central_longitude=-100, central_latitude=50),
-            hue='percent', cmap='Blues', scheme=scheme,
-            linewidth=0.9,
-            legend=True, legend_kwargs={'loc': 0}, legend_var='hue',
+            scale='percent', limits=(0.95,1),
+            projection=gcrs.AlbersEqualArea(central_longitude=-100, central_latitude=39.5),
+            hue='percent', cmap='Greens', scheme=scheme,
+            linewidth=0.5,
+            legend=True, legend_kwargs={'loc': 0},
             figsize=(8, 12)
         )
         gplt.polyplot(usa, facecolor='lightgray', edgecolor='None', ax=ax)
@@ -89,8 +90,10 @@ def main():
     url = "https://raw.githubusercontent.com/washingtonpost/data-police-shootings/master/fatal-police-shootings-data.csv"
     shootings_df = Shootings(url)
     # print(shootings_df.df.head())
-    # shootings_df.race_distribution()
     shootings_df.usa_heatmap()
+    # shootings_df.race_distribution()
+    # shootings_df.gender_distribution()
+    # shootings_df.death_distribution()
 
 if __name__ == "__main__":
     main()
