@@ -86,14 +86,30 @@ class Shootings:
         plt.title("Shooting by state in percentage")
         plt.show()
 
+    def occurrence_line_graph(self):
+        date_df = self.df
+        date_df.date = pd.to_datetime(date_df.date)
+        print(date_df.dtypes)
+        date_df = (self.df.groupby(pd.Grouper(key='date',freq='2M')).sum())
+        date_df = date_df.reset_index()
+        date_df = date_df[["date", "body_camera"]]
+        date_df = date_df.rename(columns = {"date": "date", "body_camera": "occurrence"})
+        # print(date_df)
+        date_df.plot.line(x='date', y='occurrence', rot=0)
+        plt.xticks([])
+        plt.show()
+
+
+
 def main():
     url = "https://raw.githubusercontent.com/washingtonpost/data-police-shootings/master/fatal-police-shootings-data.csv"
     shootings_df = Shootings(url)
     # print(shootings_df.df.head())
-    shootings_df.usa_heatmap()
+    # shootings_df.usa_heatmap()
     # shootings_df.race_distribution()
     # shootings_df.gender_distribution()
     # shootings_df.death_distribution()
+    shootings_df.occurrence_line_graph()
 
 if __name__ == "__main__":
     main()
