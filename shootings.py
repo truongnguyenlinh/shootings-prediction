@@ -343,6 +343,17 @@ class Shootings:
         print(testY)
 
 
+        # Show accuracy, precision, recall and F1 scores.
+        from sklearn import svm, datasets
+        from sklearn.metrics import accuracy_score
+        from sklearn.metrics import average_precision_score
+        # y_score = classifier.decision_function(testX)
+        average_precision = accuracy_score(testY, day_ahead_predictions)
+
+        print('Average accuracy score: {0:0.2f}'.format(
+            average_precision))
+
+
 def main():
     url = "https://raw.githubusercontent.com/washingtonpost/data-police-shootings/master/fatal-police-shootings-data.csv"
     shootings_df = Shootings(url)
