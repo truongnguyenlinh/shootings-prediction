@@ -1,5 +1,3 @@
-import os
-import torch
 import pandas as pd
 import numpy as np
 import seaborn as sns
@@ -38,7 +36,10 @@ class Shootings:
     def __str__(self):
         print(self.df)
 
-    def gender_distribution(self):
+    def column_distribution(self):
+        """
+        Plot pie charts which display death based on column type.
+        """
         plt.style.use("ggplot")
         fig, axes = plt.subplots(2, 3, figsize=(18, 8))
         config = {"kind": "pie", "autopct": "%1.1f%%", "startangle": 120}
@@ -52,15 +53,51 @@ class Shootings:
         plt.show()
 
     def race_distribution(self):
+        """
+        Plot histogram which displays deaths based on race.
+        """
         config = {"kind": "bar", "ylabel": "Number of Deaths",
                   "xlabel": "Race"}
         self.df["race"].value_counts().plot(**config)
         plt.show()
 
     def death_distribution(self):
-        graph = sns.countplot(x="race", data=self.df, hue="gender")
+        """
+        Plot histogram which displays deaths based on race and manner of death.
+        """
+        graph = sns.countplot(x="race", data=self.df, hue="manner_of_death")
         graph.set_xlabel("Race")
         graph.set_ylabel("Number of Deaths")
+        graph.set_title("Number of Deaths Based on Race")
+
+    def data_treatment(self):
+        """
+        Treat dataset by binning and converting date data type.
+        """
+        # Bin age groups into 4 groups
+        bins = [0, 18, 45, 60, 100]
+        groups = ["Teenager", "Adult", "Older Adult", "Senior"]
+        self.df["Age_Group"] = pd.cut(self.df["age"], bins, labels=groups)
+
+        # Convert dtype string to datetime
+        self.df["date"] = pd.to_datetime(self.df["date"])
+        self.df["year"] = pd.DatetimeIndex(self.df["date"]).year
+        self.df["month"] = pd.DatetimeIndex(self.df["date"]).month
+        self.df["month_year"] = pd.to_datetime(self.df["date"]).dt.to_period("M")
+
+        print(self.df.head())
+
+    def time_series(self):
+        plt.style.use('bmh')
+        self.df["month_year"] = self.df.month_year.astype(str)
+        line_chart = self.df.groupby(["month_year"]).agg("count")["id"].to_frame(name="count").reset_index()
+
+        plt.figure(figsize=(20, 8))
+        plt.xticks(fontsize=12)
+        plt.yticks(fontsize=15)
+        plt.plot(line_chart["month_year"], line_chart["count"])
+        plt.title("Killings by Month")
+        plt.xticks(ticks=line_chart["month_year"], rotation=90)
         plt.show()
 
     def usa_heatmap(self):
@@ -86,30 +123,18 @@ class Shootings:
         plt.title("Shooting by state in percentage")
         plt.show()
 
-    def occurrence_line_graph(self):
-        date_df = self.df
-        date_df.date = pd.to_datetime(date_df.date)
-        print(date_df.dtypes)
-        date_df = (self.df.groupby(pd.Grouper(key='date',freq='2M')).sum())
-        date_df = date_df.reset_index()
-        date_df = date_df[["date", "body_camera"]]
-        date_df = date_df.rename(columns = {"date": "date", "body_camera": "occurrence"})
-        # print(date_df)
-        date_df.plot.line(x='date', y='occurrence', rot=0)
-        plt.xticks([])
-        plt.show()
-
 
 
 def main():
     url = "https://raw.githubusercontent.com/washingtonpost/data-police-shootings/master/fatal-police-shootings-data.csv"
     shootings_df = Shootings(url)
-    # print(shootings_df.df.head())
     # shootings_df.usa_heatmap()
-    # shootings_df.race_distribution()
-    # shootings_df.gender_distribution()
-    # shootings_df.death_distribution()
-    shootings_df.occurrence_line_graph()
+    shootings_df = Shootings(url)
+    shootings_df.column_distribution()
+    shootings_df.death_distribution()
+    shootings_df.data_treatment()
+    shootings_df.time_series()
+
 
 if __name__ == "__main__":
     main()
