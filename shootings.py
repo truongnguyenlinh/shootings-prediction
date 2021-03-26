@@ -102,6 +102,9 @@ class Shootings:
         # print(self.df.head())
 
     def time_series(self):
+        """
+        Plot data in a time-series per month and year.
+        """
         plt.style.use('bmh')
         self.df["month_year"] = self.df.month_year.astype(str)
         line_chart = self.df.groupby(["month_year"]).agg("count")["id"].to_frame(name="count").reset_index()
@@ -115,6 +118,9 @@ class Shootings:
         plt.show()
 
     def usa_heatmap(self):
+        """
+        Plot a geomap to highlight states which have highest number of deaths
+        """
         states_df = self.df.state
         test = pd.DataFrame(states_df.value_counts(normalize=True).mul(100).round(1).astype(float))
         test = test.reset_index()
@@ -138,6 +144,9 @@ class Shootings:
         plt.show()
 
     def race_death_proportion(self):
+        """
+        Plot a histogram to display deaths per race population
+        """
         races = ["A", "W", "H", "B", "N", "O"]
         killed_per_race = []
         prop_killed_per_race = []
@@ -146,7 +155,6 @@ class Shootings:
             i_killings = self.df["race"].loc[(self.df["race"] == i)].count()
             killed_per_race.append(i_killings)
 
-        print(killed_per_race)
         killed_dict = {
             "A": 14674252.0,
             "W": 223553265.0,
@@ -173,17 +181,20 @@ class Shootings:
         sns.barplot(x=races, y=prop_killed_per_race)
         plt.show()
 
-    def add_prev(self, previous, this_count):
+    @staticmethod
+    def add_prev(previous, this_count):
         return previous + this_count
 
     def arima_prediction(self):
-
+        """
+        Develop an ARIMA prediction model
+        """
         data_list = ["Teenager", "Adult", "Older Adult", "Senior"]
         data_list = ['A', 'W', 'H', 'B', 'N','O']
         for txt in data_list:
             data = self.df[self.df['race'] == "W"]
 
-            ###### This section for predicting by month and creating a model
+            # == This section for predicting by month and creating a model == #
             data['month_year'] = pd.to_datetime(data['date']).dt.to_period('M')
             data = data.groupby(['month_year'])['name'].count().reset_index()
             data.reset_index()
@@ -234,7 +245,6 @@ class Shootings:
             #                  upper_series,
             #                  alpha=.15)
             # plt.plot(fitted_series, color="black")
-
 
         plt.title("ARIMA - Final Forecast of Police shooting deaths by race")
         plt.legend(loc="upper left")
