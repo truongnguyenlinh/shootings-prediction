@@ -136,6 +136,44 @@ class Shootings:
         plt.title("Shooting by state in percentage")
         plt.show()
 
+    def race_death_proportion(self):
+        races = ["A", "W", "H", "B", "N", "O"]
+        killed_per_race = []
+        prop_killed_per_race = []
+
+        for i in races:
+            i_killings = self.df["race"].loc[(self.df["race"] == i)].count()
+            killed_per_race.append(i_killings)
+
+        print(killed_per_race)
+        for i in races:
+
+            if i == "A":
+                prop_i_killed = killed_per_race[0] / 14674252.0
+                print(prop_i_killed)
+            elif i == "W":
+                prop_i_killed = killed_per_race[1] / 223553265.0
+                print(prop_i_killed)
+            elif i == "H":
+                prop_i_killed = killed_per_race[2] / 50477594.0
+                print(prop_i_killed)
+            elif i == "B":
+                prop_i_killed = killed_per_race[3] / 38929319.0
+                print(prop_i_killed)
+            elif i == "N":
+                prop_i_killed = killed_per_race[4] / 2932248.0
+                print(prop_i_killed)
+            else:
+                prop_i_killed = killed_per_race[5] / 22579629.0
+                print(prop_i_killed)
+            prop_killed_per_race.append(prop_i_killed)
+
+        plt.figure(figsize=(14,6))
+        plt.title("People killed as a proportion of their respective race",
+                  fontsize=17)
+        sns.barplot(x=races, y=prop_killed_per_race)
+        plt.show()
+
     def add_prev(self, previous, this_count):
         return previous + this_count
 
@@ -192,6 +230,7 @@ def main():
     # shootings_df = Shootings(url)
     # shootings_df.column_distribution()
     # shootings_df.death_distribution()
+    shootings_df.race_death_proportion()
     shootings_df.data_treatment()
     # shootings_df.time_series()
 
