@@ -220,31 +220,31 @@ class Shootings:
             # data = data.set_index("date")
 
 
-            # smodel = pm.auto_arima(data['id'], start_p=1, start_q=1,
-            #                  test='adf',
-            #                  max_p=3, max_q=3, m=12,
-            #                  start_P=0, seasonal=False,
-            #                  d=None, D=1, trace=True,
-            #                  error_action='ignore',
-            #                  suppress_warnings=True,
-            #                  stepwise=True)
-            #
-            #
-            # n_periods = 12
-            # fitted, confint = smodel.predict(n_periods=n_periods, return_conf_int=True)
-            # index_of_fc = pd.date_range(data.index[-1], periods=n_periods, freq='MS')
-            #
-            # # make series for plotting purpose
-            # fitted_series = pd.Series(fitted, index=index_of_fc)
-            # lower_series = pd.Series(confint[:, 0], index=index_of_fc)
-            # upper_series = pd.Series(confint[:, 1], index=index_of_fc)
-            #
-            # plt.plot(data, label=txt)
-            # plt.fill_between(lower_series.index,
-            #                  lower_series,
-            #                  upper_series,
-            #                  alpha=.15)
-            # plt.plot(fitted_series, color="black")
+            smodel = pm.auto_arima(data, start_p=1, start_q=1,
+                             test='adf',
+                             max_p=3, max_q=3, m=12,
+                             start_P=0, seasonal=False,
+                             d=None, D=1, trace=True,
+                             error_action='ignore',
+                             suppress_warnings=True,
+                             stepwise=True)
+
+
+            n_periods = 12
+            fitted, confint = smodel.predict(n_periods=n_periods, return_conf_int=True)
+            index_of_fc = pd.date_range(data.index[-1], periods=n_periods, freq='MS')
+
+            # make series for plotting purpose
+            fitted_series = pd.Series(fitted, index=index_of_fc)
+            lower_series = pd.Series(confint[:, 0], index=index_of_fc)
+            upper_series = pd.Series(confint[:, 1], index=index_of_fc)
+
+            plt.plot(data, label=txt)
+            plt.fill_between(lower_series.index,
+                             lower_series,
+                             upper_series,
+                             alpha=.15)
+            plt.plot(fitted_series, color="black")
 
         plt.title("ARIMA - Final Forecast of Police shooting deaths by race")
         plt.legend(loc="upper left")
