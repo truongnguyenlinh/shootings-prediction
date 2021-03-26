@@ -95,10 +95,10 @@ class Shootings:
         self.df.dropna(subset=["race"], inplace=True)
 
         # Add total_population column with data corresponding to race
-        conditions = [self.df["race"] == "A", self.df["race"] == "W",
-                      self.df["race"] == "H", self.df["race"] == "B",
-                      self.df["race"] == "N", self.df["race"] == "O"]
-        numbers = [14674252, 223553265, 50477594, 38929319, 2932248, 22579629]
+        # conditions = [self.df["race"] == "A", self.df["race"] == "W",
+        #               self.df["race"] == "H", self.df["race"] == "B",
+        #               self.df["race"] == "N", self.df["race"] == "O"]
+        # numbers = [14674252, 223553265, 50477594, 38929319, 2932248, 22579629]
 
         # Convert gender into binary values
         self.df["gender_bin"] = np.where(self.df["gender"] == "M", 1, 0)
@@ -128,7 +128,7 @@ class Shootings:
         self.df["race"] = self.df["race"].astype("category")
         self.df["race_cat"] = self.df["race"].cat.codes
 
-        self.df["total_population"] = np.select(conditions, numbers, default=0)
+        # self.df["total_population"] = np.select(conditions, numbers, default=0)
 
     def time_series(self):
         """
@@ -262,8 +262,7 @@ class Shootings:
         """
         X = self.df[["id", "age", "gender_bin", "threat_level_cat",
                      "signs_of_mental_illness_bin", "manner_of_death_bin",
-                     "body_camera_bin", "is_geocoding_exact_bin",
-                     "total_population"]]
+                     "body_camera_bin", "is_geocoding_exact_bin"]]
         y = self.df[["race_cat"]]
 
         X = sm.add_constant(X)
@@ -275,6 +274,108 @@ class Shootings:
         print('Root Mean Squared Error:',
               np.sqrt(metrics.mean_squared_error(y_test, predictions)))
 
+    def backtest(self):
+        import pandas as pd
+        import numpy as np
+        from sklearn import metrics
+        from sklearn.linear_model import LogisticRegression
+        import pmdarima as pm
+
+        potentialFeatures = self.df.copy()
+        # print(potentialFeatures.head())
+        # print(potentialFeatures.head())
+        del potentialFeatures['date']
+        del potentialFeatures['name']
+        del potentialFeatures['manner_of_death']
+        del potentialFeatures['gender']
+        del potentialFeatures['race']
+        del potentialFeatures['armed']
+        del potentialFeatures['signs_of_mental_illness']
+        del potentialFeatures['threat_level']
+        del potentialFeatures['body_camera']
+        del potentialFeatures['is_geocoding_exact']
+        del potentialFeatures['Age_Group']
+        del potentialFeatures['city']
+        del potentialFeatures['state']
+        del potentialFeatures['flee']
+        del potentialFeatures['month_year']
+        del potentialFeatures['longitude']
+        del potentialFeatures['latitude']
+        # potentialFeatures = potentialFeatures.dropna(how='any')
+        print(potentialFeatures.head())
+        X = potentialFeatures
+        # print(self.df.head())
+        y = potentialFeatures['race_cat']
+        print(y.head())
+
+        # Import the necessary libraries
+        from sklearn.feature_selection import SelectKBest, f_classif
+        from sklearn.feature_selection import chi2
+
+        from sklearn.preprocessing import MinMaxScaler
+        xscaler = MinMaxScaler()
+        scaledX = xscaler.fit_transform(X)
+
+        # Get best 4 features.
+        sel_chi2 = SelectKBest(chi2, k=3)  # select 10 best features
+        X_train_chi2 = sel_chi2.fit_transform(scaledX, y)
+        # print(sel_chi2.get_support())
+        selections = sel_chi2.get_support()
+
+        # Build best feature list.
+        keys = X.keys()
+        chosenFeatures = []
+        for i in range(0, len(selections)):
+            if (selections[i] == True):
+                chosenFeatures.append(keys[i])
+        print(chosenFeatures)
+
+        # Scale best feature set.
+        subX = X[chosenFeatures]
+        xscaler2 = MinMaxScaler()
+        subXScaled = xscaler.fit_transform(subX)
+
+        TOTAL_DAYS_AHEAD = 1000
+        lenX = len(X)
+        daysLeft = TOTAL_DAYS_AHEAD
+
+        # Get day ahead predictions. Each prediction uses the latest
+        # data.
+        dayAheadPredictions = []
+        while daysLeft >= 1:
+            print(daysLeft)
+            splitRow = lenX - daysLeft
+
+            # Split dataframe so training set has latest data.
+            trainX = subX.iloc[:splitRow, :]
+            testX = subX.iloc[splitRow:, :]
+            trainY = y.iloc[:splitRow]
+            # testY = y.iloc[splitRow:, :]
+            daysLeft -= 1
+
+            # Scale train and test.
+            scaledTrainX = xscaler.transform(trainX)
+            scaledTestX = xscaler.transform(testX)
+
+            # Build model with latest data and make predictions.
+            model = LogisticRegression(solver='liblinear')
+            model.fit(scaledTrainX, trainY)
+
+            predictions = model.predict(scaledTestX)
+            prediction = predictions[0]  # Extract next-day prediction and add to list.
+            dayAheadPredictions.append(prediction)
+
+        # Show all rows of dataframe.
+        pd.set_option("display.max_rows", None, "display.max_columns", None)
+        print("Day ahead predictions: ")
+        print(dayAheadPredictions)
+        print("Actual values: ")
+        splitRow = len(y) - TOTAL_DAYS_AHEAD
+        testY = y.iloc[splitRow:]
+        # print(testY)
+
+        # Show accuracy, precision, recall and F1 scores.
+
 
 def main():
     url = "https://raw.githubusercontent.com/washingtonpost/data-police-shootings/master/fatal-police-shootings-data.csv"
@@ -283,13 +384,13 @@ def main():
     # shootings_df = Shootings(url)
     # shootings_df.column_distribution()
     # shootings_df.death_distribution()
-    shootings_df.race_death_proportion()
+    # shootings_df.race_death_proportion()
     shootings_df.data_treatment()
     # shootings_df.time_series()
-    shootings_df.ols_model()
+    # shootings_df.ols_model()
 
-    shootings_df.arima_prediction()
-
+    # shootings_df.arima_prediction()
+    shootings_df.backtest()
 
 if __name__ == "__main__":
     main()
