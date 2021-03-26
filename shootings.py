@@ -12,10 +12,10 @@ from sklearn import metrics
 import mapclassify as mc
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
-from statsmodels.tsa.arima_model import ARIMA
 from sklearn.feature_selection import SelectKBest
 from sklearn.feature_selection import chi2
 from sklearn.preprocessing import MinMaxScaler
+from sklearn.metrics import accuracy_score
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -342,11 +342,6 @@ class Shootings:
         testY = y.iloc[split_row:]
         print(testY)
 
-        # Show accuracy, precision, recall and F1 scores.
-        from sklearn import svm, datasets
-        from sklearn.metrics import accuracy_score
-        from sklearn.metrics import average_precision_score
-        # y_score = classifier.decision_function(testX)
         average_precision = accuracy_score(testY, day_ahead_predictions)
 
         print('Average accuracy score: {0:0.2f}'.format(
