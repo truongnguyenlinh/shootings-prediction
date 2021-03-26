@@ -346,16 +346,15 @@ class Shootings:
 def main():
     url = "https://raw.githubusercontent.com/washingtonpost/data-police-shootings/master/fatal-police-shootings-data.csv"
     shootings_df = Shootings(url)
-    # shootings_df.usa_heatmap()
-    # shootings_df = Shootings(url)
-    # shootings_df.column_distribution()
-    # shootings_df.death_distribution()
-    # shootings_df.race_death_proportion()
+    shootings_df.usa_heatmap()
+    shootings_df.column_distribution()
+    shootings_df.race_distribution()
+    shootings_df.death_distribution()
+    shootings_df.race_death_proportion()
+    shootings_df.time_series()
     shootings_df.data_treatment()
-    # shootings_df.time_series()
-    # shootings_df.ols_model()
-
-    # shootings_df.arima_prediction()
+    shootings_df.ols_model()
+    shootings_df.arima_prediction()
     shootings_df.back_test()
 
 
