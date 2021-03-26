@@ -1,3 +1,4 @@
+# install geoplot via 'conda install geoplot -c conda-forge'
 import pandas as pd
 import numpy as np
 import seaborn as sns
@@ -10,8 +11,11 @@ import pmdarima as pm
 from sklearn import metrics
 import mapclassify as mc
 from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
 from statsmodels.tsa.arima_model import ARIMA
-# install geoplot via 'conda install geoplot -c conda-forge'
+from sklearn.feature_selection import SelectKBest
+from sklearn.feature_selection import chi2
+from sklearn.preprocessing import MinMaxScaler
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -115,7 +119,7 @@ class Shootings:
         self.df["is_geocoding_exact_bin"] =\
             np.where(self.df["is_geocoding_exact"] == True, 1, 0)
 
-        self.df["manner_of_death_bin"] = \
+        self.df["manner_of_death_bin"] =\
             np.where(self.df["manner_of_death"] == "shot", 1, 0)
 
         # Label encode threat level
@@ -262,8 +266,7 @@ class Shootings:
         """
         X = self.df[["id", "age", "gender_bin", "threat_level_cat",
                      "signs_of_mental_illness_bin", "manner_of_death_bin",
-                     "body_camera_bin", "is_geocoding_exact_bin",
-                     "total_population"]]
+                     "body_camera_bin", "is_geocoding_exact_bin"]]
         y = self.df[["race_cat"]]
 
         X = sm.add_constant(X)
@@ -275,23 +278,85 @@ class Shootings:
         print('Root Mean Squared Error:',
               np.sqrt(metrics.mean_squared_error(y_test, predictions)))
 
+        def back_test(self):
+        """
+        Perform back testing.
+        """
+        total_days_ahead = 1000
+
+        X = self.df[["id", "age", "year", "month", "gender_bin",
+                     "signs_of_mental_illness_bin", "body_camera_bin",
+                     "is_geocoding_exact_bin", "manner_of_death_bin",
+                     "threat_level_cat"]]
+        y = self.df[['race_cat']]
+
+        xscaler = MinMaxScaler()
+        scaledX = xscaler.fit_transform(X)
+
+        sel_chi2 = SelectKBest(chi2, k=3)  # Select 10 best features
+        X_train_chi2 = sel_chi2.fit_transform(scaledX, y)
+        selections = sel_chi2.get_support()
+
+        # Build best feature list.
+        keys = X.keys()
+        chosen_features = []
+        for i in range(0, len(selections)):
+            if selections[i]:
+                chosen_features.append(keys[i])
+
+        subX = X[chosen_features]
+        xscaler2 = MinMaxScaler()
+        subXScaled = xscaler.fit_transform(subX)
+
+        lenX = len(X)
+        days_left = total_days_ahead
+
+        # Get day ahead predictions. Each prediction uses the latest data.
+        day_ahead_predictions = []
+        while days_left >= 1:
+            split_row = lenX - days_left
+
+            # Split dataframe so training set has latest data.
+            trainX = subX.iloc[:split_row, :]
+            testX = subX.iloc[split_row:, :]
+            trainY = y.iloc[:split_row]
+            days_left -= 1
+
+            # Scale train and test.
+            scaledTrainX = xscaler.transform(trainX)
+            scaledTestX = xscaler.transform(testX)
+
+            # Build model with latest data and make predictions.
+            model = LogisticRegression(solver='liblinear')
+            model.fit(scaledTrainX, trainY)
+
+            predictions = model.predict(scaledTestX)
+            prediction = predictions[0]
+            # Extract next-day prediction and add to list.
+            day_ahead_predictions.append(prediction)
+
+        print("Day ahead predictions: ")
+        print(day_ahead_predictions)
+        print("Actual values: ")
+        split_row = len(y) - total_days_ahead
+        testY = y.iloc[split_row:]
+        print(testY)
+
 
 def main():
     url = "https://raw.githubusercontent.com/washingtonpost/data-police-shootings/master/fatal-police-shootings-data.csv"
     shootings_df = Shootings(url)
-    # shootings_df.usa_heatmap()
-    # shootings_df = Shootings(url)
-    # shootings_df.column_distribution()
-    # shootings_df.death_distribution()
+    shootings_df.usa_heatmap()
+    shootings_df.column_distribution()
+    shootings_df.race_distribution()
+    shootings_df.death_distribution()
     shootings_df.race_death_proportion()
+    shootings_df.time_series()
     shootings_df.data_treatment()
-    # shootings_df.time_series()
     shootings_df.ols_model()
-
     shootings_df.arima_prediction()
+    shootings_df.back_test()
 
 
 if __name__ == "__main__":
     main()
-
-
