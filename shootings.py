@@ -278,7 +278,7 @@ class Shootings:
         print('Root Mean Squared Error:',
               np.sqrt(metrics.mean_squared_error(y_test, predictions)))
 
-        def back_test(self):
+    def back_test(self):
         """
         Perform back testing.
         """
