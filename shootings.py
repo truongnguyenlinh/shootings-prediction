@@ -188,16 +188,17 @@ class Shootings:
         data_list = ['A', 'W', 'H', 'B', 'N','O']
         for txt in data_list:
             data = self.df[self.df['race'] == txt]
-            data = data.groupby("date").count().reset_index()
-            data['count'] = data.groupby('date')['id'].transform('sum')
-            data = data[['date', 'count']]
+            # data = self.df
+            data = data.groupby("month_year").count().reset_index()
+            data['count'] = data.groupby('month_year')['name'].transform('sum')
+            print(data.head())
+            data = data[['month_year', 'count']]
             for i in range(1, len(data)):
                 data.loc[i, 'count'] += data.loc[i - 1, 'count']
 
-            print(data)
-            data['date'] = pd.to_datetime(data['date'], format="%Y-%m-%d")
-            data = data.set_index("date")
-
+            data['month_year'] = data['month_year'].dt.to_timestamp('s').dt.strftime('%Y-%m')
+            data['month_year'] = pd.to_datetime(data['month_year'], format="%Y-%m")
+            data = data.set_index("month_year")
             smodel = pm.auto_arima(data, start_p=1, start_q=1,
                                    test='adf',
                                    max_p=3, max_q=3, m=12,
@@ -220,7 +221,7 @@ class Shootings:
             plt.fill_between(lower_series.index,
                              lower_series,
                              upper_series,
-                             alpha=.15)
+                             color="k", alpha=.15)
             plt.plot(fitted_series, color="black")
         plt.title("ARIMA - Final Forecast of Police shooting deaths by race")
         plt.legend(loc="upper left")
