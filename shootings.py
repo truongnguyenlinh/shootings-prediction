@@ -119,7 +119,7 @@ class Shootings:
         self.df["is_geocoding_exact_bin"] =\
             np.where(self.df["is_geocoding_exact"] == True, 1, 0)
 
-        self.df["manner_of_death_bin"] = \
+        self.df["manner_of_death_bin"] =\
             np.where(self.df["manner_of_death"] == "shot", 1, 0)
 
         # Label encode threat level
@@ -278,7 +278,7 @@ class Shootings:
         print('Root Mean Squared Error:',
               np.sqrt(metrics.mean_squared_error(y_test, predictions)))
 
-    def back_test(self):
+        def back_test(self):
         """
         Perform back testing.
         """
@@ -360,5 +360,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
