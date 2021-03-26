@@ -77,6 +77,18 @@ class Shootings:
         self.df["month"] = pd.DatetimeIndex(self.df["date"]).month
         self.df["month_year"] = pd.to_datetime(self.df["date"]).dt.to_period("M")
 
+        # Fill age column with mean, and drop rows where race is missing
+        self.df["age"].fillna(value=self.df["age"].mean(), inplace=True)
+        self.df["age"] = self.df["age"].astype(int)
+        self.df.dropna(subset=["race"], inplace=True)
+
+        # Add total_population column with data corresponding to race
+        conditions = [self.df["race"] == "A", self.df["race"] == "W",
+                      self.df["race"] == "H", self.df["race"] == "B",
+                      self.df["race"] == "N", self.df["race"] == "O"]
+        numbers = [14674252, 223553265, 50477594, 38929319, 2932248, 22579629]
+
+        self.df["total_population"] = np.select(conditions, numbers, default=0)
         print(self.df.head())
 
     def time_series(self):
@@ -96,10 +108,10 @@ class Shootings:
 def main():
     url = "https://raw.githubusercontent.com/washingtonpost/data-police-shootings/master/fatal-police-shootings-data.csv"
     shootings_df = Shootings(url)
-    shootings_df.column_distribution()
-    shootings_df.death_distribution()
+    # shootings_df.column_distribution()
+    # shootings_df.death_distribution()
     shootings_df.data_treatment()
-    shootings_df.time_series()
+    # shootings_df.time_series()
 
 
 if __name__ == "__main__":
