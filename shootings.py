@@ -147,26 +147,24 @@ class Shootings:
             killed_per_race.append(i_killings)
 
         print(killed_per_race)
+        killed_dict = {
+            "A": 14674252.0,
+            "W": 223553265.0,
+            "H": 50477594.0,
+            "B": 38929319.0,
+            "N": 2932248.0,
+            "O": 22579629.0
+        }
+        killed_order = {
+            "A": 0,
+            "W": 1,
+            "H": 2,
+            "B": 3,
+            "N": 4,
+            "O": 5
+        }
         for i in races:
-
-            if i == "A":
-                prop_i_killed = killed_per_race[0] / 14674252.0
-                print(prop_i_killed)
-            elif i == "W":
-                prop_i_killed = killed_per_race[1] / 223553265.0
-                print(prop_i_killed)
-            elif i == "H":
-                prop_i_killed = killed_per_race[2] / 50477594.0
-                print(prop_i_killed)
-            elif i == "B":
-                prop_i_killed = killed_per_race[3] / 38929319.0
-                print(prop_i_killed)
-            elif i == "N":
-                prop_i_killed = killed_per_race[4] / 2932248.0
-                print(prop_i_killed)
-            else:
-                prop_i_killed = killed_per_race[5] / 22579629.0
-                print(prop_i_killed)
+            prop_i_killed = killed_per_race[killed_order[i]] / killed_dict[i]
             prop_killed_per_race.append(prop_i_killed)
 
         plt.figure(figsize=(14,6))
@@ -254,7 +252,7 @@ def main():
     shootings_df.data_treatment()
     # shootings_df.time_series()
 
-    shootings_df.arima_prediction()
+    # shootings_df.arima_prediction()
 
 
 if __name__ == "__main__":
