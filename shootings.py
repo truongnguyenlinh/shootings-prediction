@@ -6,6 +6,7 @@ from matplotlib.pyplot import pie, axis, show
 import geopandas as gpd
 import geoplot as gplt
 import geoplot.crs as gcrs
+import pmdarima as pm
 import mapclassify as mc
 # install geoplot via 'conda install geoplot -c conda-forge'
 
@@ -85,7 +86,7 @@ class Shootings:
         self.df["month"] = pd.DatetimeIndex(self.df["date"]).month
         self.df["month_year"] = pd.to_datetime(self.df["date"]).dt.to_period("M")
 
-        print(self.df.head())
+        # print(self.df.head())
 
     def time_series(self):
         plt.style.use('bmh')
@@ -123,17 +124,62 @@ class Shootings:
         plt.title("Shooting by state in percentage")
         plt.show()
 
+    def arima_prediction(self):
+        data = pd.read_csv("https://raw.githubusercontent.com/washingtonpost/data-police-shootings/master/fatal-police-shootings-data.csv")
+        data = data.reset_index()
+        result = data.groupby('date').size().rename('Count').reset_index()
+
+        new_df = data.value_counts().rename_axis('date').reset_index(name='counts')
+        print(new_df)
+
+        # TODO: need dataframe with {col1: date, col2: count} where count is aggregated
+
+        quit()
+
+
+        smodel = pm.auto_arima(data, start_p=1, start_q=1,
+                         test='adf',
+                         max_p=3, max_q=3, m=12,
+                         start_P=0, seasonal=True,
+                         d=None, D=1, trace=True,
+                         error_action='ignore',
+                         suppress_warnings=True,
+                         stepwise=True)
+
+        # print(smodel.summary())
+
+        n_periods = 12
+        fitted, confint = smodel.predict(n_periods=n_periods, return_conf_int=True)
+        index_of_fc = pd.date_range(data.index[-1], periods=n_periods, freq='MS')
+
+        # make series for plotting purpose
+        fitted_series = pd.Series(fitted, index=index_of_fc)
+        lower_series = pd.Series(confint[:, 0], index=index_of_fc)
+        upper_series = pd.Series(confint[:, 1], index=index_of_fc)
+
+        # Plot
+        plt.plot(data)
+        plt.plot(fitted_series, color='darkgreen')
+        plt.fill_between(lower_series.index,
+                         lower_series,
+                         upper_series,
+                         color='k', alpha=.15)
+
+        plt.title("ARIMA - Final Forecast of Police shooting deaths")
+        plt.show()
 
 
 def main():
     url = "https://raw.githubusercontent.com/washingtonpost/data-police-shootings/master/fatal-police-shootings-data.csv"
     shootings_df = Shootings(url)
     # shootings_df.usa_heatmap()
-    shootings_df = Shootings(url)
-    shootings_df.column_distribution()
-    shootings_df.death_distribution()
+    # shootings_df = Shootings(url)
+    # shootings_df.column_distribution()
+    # shootings_df.death_distribution()
     shootings_df.data_treatment()
-    shootings_df.time_series()
+    # shootings_df.time_series()
+
+    shootings_df.arima_prediction()
 
 
 if __name__ == "__main__":
