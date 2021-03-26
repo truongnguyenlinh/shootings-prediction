@@ -4,15 +4,14 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from matplotlib.pyplot import pie, axis, show
 import geopandas as gpd
-import geoplot as gplt
-import geoplot.crs as gcrs
+# import geoplot as gplt
+# import geoplot.crs as gcrs
 import pmdarima as pm
 import mapclassify as mc
 from statsmodels.tsa.arima_model import ARIMA
 # install geoplot via 'conda install geoplot -c conda-forge'
-
-from statsmodels.tsa.seasonal import seasonal_decompose
-
+import warnings
+warnings.filterwarnings("ignore")
 
 class Shootings:
     """Shootings dataset."""
@@ -186,49 +185,27 @@ class Shootings:
         return previous + this_count
 
     def arima_prediction(self):
-        """
-        Develop an ARIMA prediction model
-        """
-        data_list = ["Teenager", "Adult", "Older Adult", "Senior"]
         data_list = ['A', 'W', 'H', 'B', 'N','O']
         for txt in data_list:
-            data = self.df[self.df['race'] == "W"]
+            data = self.df[self.df['race'] == txt]
+            data = data.groupby("date").count().reset_index()
+            data['count'] = data.groupby('date')['id'].transform('sum')
+            data = data[['date', 'count']]
+            for i in range(1, len(data)):
+                data.loc[i, 'count'] += data.loc[i - 1, 'count']
 
-            # == This section for predicting by month and creating a model == #
-            data['month_year'] = pd.to_datetime(data['date']).dt.to_period('M')
-            data = data.groupby(['month_year'])['name'].count().reset_index()
-            data.reset_index()
-            # print(data.head())
-            data.set_index("month_year")
-            model = ARIMA(
-                data['name'],
-                order=(3, 2, 1)
-            )
-            fit = model.fit()
-            fit.plot_predict(dynamic=False)
-            # plt.show()
-            # print(fit)
-
-
-            ####### This section for predicting by days
-            # data['count'] = data.groupby('date')['id'].transform('sum')
-            # data = data[['date','count']]
-            # for i in range(1, len(data)):
-            #     data.loc[i, 'count'] += data.loc[i-1, 'count']
-            # print(data)
-            # data['date'] = pd.to_datetime(data['date'], format="%Y-%m-%d")
-            # data = data.set_index("date")
-
+            print(data)
+            data['date'] = pd.to_datetime(data['date'], format="%Y-%m-%d")
+            data = data.set_index("date")
 
             smodel = pm.auto_arima(data, start_p=1, start_q=1,
-                             test='adf',
-                             max_p=3, max_q=3, m=12,
-                             start_P=0, seasonal=False,
-                             d=None, D=1, trace=True,
-                             error_action='ignore',
-                             suppress_warnings=True,
-                             stepwise=True)
-
+                                   test='adf',
+                                   max_p=3, max_q=3, m=12,
+                                   start_P=0, seasonal=False,
+                                   d=None, D=1, trace=True,
+                                   error_action='ignore',
+                                   suppress_warnings=True,
+                                   stepwise=True)
 
             n_periods = 12
             fitted, confint = smodel.predict(n_periods=n_periods, return_conf_int=True)
@@ -245,7 +222,6 @@ class Shootings:
                              upper_series,
                              alpha=.15)
             plt.plot(fitted_series, color="black")
-
         plt.title("ARIMA - Final Forecast of Police shooting deaths by race")
         plt.legend(loc="upper left")
         plt.show()
@@ -262,7 +238,7 @@ def main():
     shootings_df.data_treatment()
     # shootings_df.time_series()
 
-    # shootings_df.arima_prediction()
+    shootings_df.arima_prediction()
 
 
 if __name__ == "__main__":
