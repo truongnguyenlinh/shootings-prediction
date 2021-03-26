@@ -2,16 +2,19 @@ import pandas as pd
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
-from matplotlib.pyplot import pie, axis, show
+import statsmodels.api as sm
 import geopandas as gpd
-# import geoplot as gplt
-# import geoplot.crs as gcrs
+import geoplot as gplt
+import geoplot.crs as gcrs
 import pmdarima as pm
+from sklearn import metrics
 import mapclassify as mc
+from sklearn.model_selection import train_test_split
 from statsmodels.tsa.arima_model import ARIMA
 # install geoplot via 'conda install geoplot -c conda-forge'
 import warnings
 warnings.filterwarnings("ignore")
+
 
 class Shootings:
     """Shootings dataset."""
@@ -97,8 +100,35 @@ class Shootings:
                       self.df["race"] == "N", self.df["race"] == "O"]
         numbers = [14674252, 223553265, 50477594, 38929319, 2932248, 22579629]
 
+        # Convert gender into binary values
+        self.df["gender_bin"] = np.where(self.df["gender"] == "M", 1, 0)
+
+        # Convert signs_of_mental_illness column into binary values
+        self.df["signs_of_mental_illness_bin"] =\
+            np.where(self.df["signs_of_mental_illness"] == True, 1, 0)
+
+        # Convert body_camera column into binary values
+        self.df["body_camera_bin"] =\
+            np.where(self.df["body_camera"] == True, 1, 0)
+
+        # Convert is_geocoding_exact column into binary values
+        self.df["is_geocoding_exact_bin"] =\
+            np.where(self.df["is_geocoding_exact"] == True, 1, 0)
+
+        self.df["manner_of_death_bin"] = \
+            np.where(self.df["manner_of_death"] == "shot", 1, 0)
+
+        # Label encode threat level
+        # attack:0, other:1, undetermined:2
+        self.df["threat_level"] = self.df["threat_level"].astype("category")
+        self.df["threat_level_cat"] = self.df["threat_level"].cat.codes
+
+        # Label encode race column
+        # A:0, B:1, H:2, N:3, O:4, W:5, None:6
+        self.df["race"] = self.df["race"].astype("category")
+        self.df["race_cat"] = self.df["race"].cat.codes
+
         self.df["total_population"] = np.select(conditions, numbers, default=0)
-        # print(self.df.head())
 
     def time_series(self):
         """
@@ -180,11 +210,10 @@ class Shootings:
         sns.barplot(x=races, y=prop_killed_per_race)
         plt.show()
 
-    @staticmethod
-    def add_prev(previous, this_count):
-        return previous + this_count
-
     def arima_prediction(self):
+        """
+        Complete an ARIMA prediction]
+        """
         data_list = ['A', 'W', 'H', 'B', 'N','O']
         for txt in data_list:
             data = self.df[self.df['race'] == txt]
@@ -226,6 +255,25 @@ class Shootings:
         plt.legend(loc="upper left")
         plt.show()
 
+    def ols_model(self):
+        """
+        Perform OLS regression on input against race
+        """
+        X = self.df[["id", "age", "gender_bin", "threat_level_cat",
+                     "signs_of_mental_illness_bin", "manner_of_death_bin",
+                     "body_camera_bin", "is_geocoding_exact_bin",
+                     "total_population"]]
+        y = self.df[["race_cat"]]
+
+        X = sm.add_constant(X)
+
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=0)
+        model = sm.OLS(y_train, X_train).fit()
+        predictions = model.predict(X_test)
+        print(model.summary())
+        print('Root Mean Squared Error:',
+              np.sqrt(metrics.mean_squared_error(y_test, predictions)))
+
 
 def main():
     url = "https://raw.githubusercontent.com/washingtonpost/data-police-shootings/master/fatal-police-shootings-data.csv"
@@ -237,6 +285,7 @@ def main():
     shootings_df.race_death_proportion()
     shootings_df.data_treatment()
     # shootings_df.time_series()
+    shootings_df.ols_model()
 
     shootings_df.arima_prediction()
 
